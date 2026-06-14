@@ -49,24 +49,32 @@ export async function POST(req: NextRequest) {
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
-  const ref = searchParams.get("ref");
+  const ref    = searchParams.get("ref");
+  const status = searchParams.get("status") as any;
+  const page   = Math.max(1, Number(searchParams.get("page") ?? 1));
+  const perPage = 20;
 
+  // Public reference lookup
   if (ref) {
     const app = await prisma.admissionApplication.findUnique({
       where: { referenceNumber: ref },
-      select: {
-        referenceNumber: true,
-        firstName: true,
-        lastName: true,
-        status: true,
-        createdAt: true,
-        reviewedAt: true,
-      },
+      select: { referenceNumber: true, firstName: true, lastName: true, status: true, createdAt: true, reviewedAt: true },
     });
-
     if (!app) return NextResponse.json({ success: false, error: "Application not found" }, { status: 404 });
     return NextResponse.json({ success: true, data: app });
   }
 
-  return NextResponse.json({ success: false, error: "Provide ref query param" }, { status: 400 });
+  // Admin list
+  const where = status ? { status } : {};
+  const [applications, total] = await Promise.all([
+    prisma.admissionApplication.findMany({
+      where,
+      orderBy: { createdAt: "desc" },
+      skip: (page - 1) * perPage,
+      take: perPage,
+    }),
+    prisma.admissionApplication.count({ where }),
+  ]);
+
+  return NextResponse.json({ applications, total, page, perPage });
 }
