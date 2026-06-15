@@ -227,16 +227,17 @@ enum MediaType {
 }
 
 model GalleryItem {
-  id          String    @id @default(cuid())
-  title       String
-  description String?
-  url         String
-  thumbnailUrl String?
-  mediaType   MediaType @default(IMAGE)
-  albumId     String?
-  album       Album?    @relation(fields: [albumId], references: [id])
-  isPublished Boolean   @default(true)
-  createdAt   DateTime  @default(now())
+  id                 String    @id @default(cuid())
+  title              String
+  description        String?
+  url                String
+  thumbnailUrl       String?
+  cloudinaryPublicId String?
+  mediaType          MediaType @default(IMAGE)
+  albumId            String?
+  album              Album?    @relation(fields: [albumId], references: [id])
+  isPublished        Boolean   @default(true)
+  createdAt          DateTime  @default(now())
 }
 
 model Album {

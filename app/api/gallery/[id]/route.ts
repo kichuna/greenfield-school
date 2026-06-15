@@ -2,8 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { unlink } from "fs/promises";
-import path from "path";
+import { deleteFromCloudinary } from "@/lib/cloudinary";
 
 export async function DELETE(_req: NextRequest, { params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions);
@@ -14,10 +13,9 @@ export async function DELETE(_req: NextRequest, { params }: { params: { id: stri
   const item = await prisma.galleryItem.findUnique({ where: { id: params.id } });
   if (!item) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  // Delete file from disk if it's a local upload
-  if (item.url.startsWith("/uploads/")) {
-    const filepath = path.join(process.cwd(), "public", item.url);
-    await unlink(filepath).catch(() => {}); // ignore if already gone
+  // Delete from Cloudinary if it's a Cloudinary URL
+  if (item.url.includes("cloudinary.com") && item.cloudinaryPublicId) {
+    await deleteFromCloudinary(item.cloudinaryPublicId).catch(() => {});
   }
 
   await prisma.galleryItem.delete({ where: { id: params.id } });
