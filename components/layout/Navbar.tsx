@@ -32,6 +32,7 @@ const navLinks = [
   { label: "Admissions",   href: "/admissions" },
   { label: "Alumni",       href: "/alumni" },
   { label: "News",         href: "/news" },
+  { label: "Gallery",      href: "/gallery" },
   { label: "Contact",      href: "/contact" },
 ];
 
