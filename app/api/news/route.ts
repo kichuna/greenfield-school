@@ -16,19 +16,29 @@ const newsSchema = z.object({
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
+  const all     = searchParams.get("all") === "true";
   const page    = Number(searchParams.get("page") ?? 1);
   const perPage = Number(searchParams.get("perPage") ?? 9);
   const skip    = (page - 1) * perPage;
 
+  if (all) {
+    const session = await getServerSession(authOptions);
+    if (!session || !["SUPER_ADMIN", "ADMIN", "STAFF"].includes((session.user as any).role)) {
+      return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+    }
+  }
+
+  const where = all ? undefined : { status: "PUBLISHED" as const };
+
   const [items, total] = await Promise.all([
     prisma.newsItem.findMany({
-      where: { status: "PUBLISHED" },
-      orderBy: { publishedAt: "desc" },
-      skip,
-      take: perPage,
+      where,
+      orderBy: { createdAt: "desc" },
+      skip:    all ? undefined : skip,
+      take:    all ? undefined : perPage,
       include: { author: { select: { name: true } }, tags: true },
     }),
-    prisma.newsItem.count({ where: { status: "PUBLISHED" } }),
+    prisma.newsItem.count({ where }),
   ]);
 
   return NextResponse.json({

@@ -17,7 +17,7 @@ interface NewsItem {
 interface GalleryItem {
   id: string;
   title: string | null;
-  fileUrl: string;
+  url: string;
 }
 
 function formatDate(d: string) {
@@ -40,9 +40,9 @@ export default function AdminNewsPage() {
 
   async function loadNews() {
     setLoading(true);
-    const res = await fetch("/api/news");
+    const res = await fetch("/api/news?all=true");
     const data = await res.json();
-    setNews(Array.isArray(data) ? data : data.items ?? []);
+    setNews(Array.isArray(data) ? data : data.data ?? []);
     setLoading(false);
   }
 
@@ -64,7 +64,7 @@ export default function AdminNewsPage() {
     const res = await fetch("/api/gallery");
     const data = await res.json();
     const items: GalleryItem[] = (data.items ?? data).map((i: any) => ({
-      id: i.id, title: i.title, fileUrl: i.fileUrl,
+      id: i.id, title: i.title, url: i.url,
     }));
     setGallery(items);
     setGalleryLoad(false);
@@ -77,8 +77,8 @@ export default function AdminNewsPage() {
     fd.append("title", file.name.replace(/\.[^.]+$/, ""));
     const res = await fetch("/api/gallery", { method: "POST", body: fd });
     const item = await res.json();
-    setGallery((prev) => [{ id: item.id, title: item.title, fileUrl: item.fileUrl }, ...prev]);
-    setSelected(item.fileUrl);
+    setGallery((prev) => [{ id: item.id, title: item.title, url: item.url }, ...prev]);
+    setSelected(item.url);
     setUploading(false);
   }
 
@@ -228,14 +228,14 @@ export default function AdminNewsPage() {
                   {gallery.map((img) => (
                     <button
                       key={img.id}
-                      onClick={() => setSelected(img.fileUrl)}
+                      onClick={() => setSelected(img.url)}
                       className={`relative aspect-square rounded-lg overflow-hidden border-2 transition-all ${
-                        selected === img.fileUrl ? "border-school-blue ring-2 ring-school-blue/30" : "border-transparent hover:border-gray-300"
+                        selected === img.url ? "border-school-blue ring-2 ring-school-blue/30" : "border-transparent hover:border-gray-300"
                       }`}
                     >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={img.fileUrl} alt={img.title ?? ""} className="w-full h-full object-cover" />
-                      {selected === img.fileUrl && (
+                      <img src={img.url} alt={img.title ?? ""} className="w-full h-full object-cover" />
+                      {selected === img.url && (
                         <div className="absolute inset-0 bg-school-blue/20 flex items-center justify-center">
                           <CheckCircle className="w-6 h-6 text-school-blue" />
                         </div>
