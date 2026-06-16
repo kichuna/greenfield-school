@@ -200,10 +200,7 @@ export default async function AcademicsPage() {
                     </div>
                   </div>
                   <a
-                    href={r.fileUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    download
+                    href={`/api/documents/${r.id}/download`}
                     className="btn-outline text-xs py-1.5 px-4 gap-1 shrink-0"
                   >
                     <Download className="w-3.5 h-3.5" /> Download

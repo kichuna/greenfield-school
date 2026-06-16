@@ -39,9 +39,6 @@ function fileIcon(type: string) {
   return "📁";
 }
 
-function formatSize(url: string) {
-  return url ? "—" : "—";
-}
 
 export default function AdminDocumentsPage() {
   const [docs,     setDocs]     = useState<Doc[]>([]);
@@ -294,8 +291,9 @@ export default function AdminDocumentsPage() {
                   </td>
                   <td className="px-5 py-4">
                     <div className="flex items-center gap-2 justify-end">
-                      <a href={doc.fileUrl} target="_blank" rel="noopener noreferrer"
-                        className="p-1.5 text-gray-400 hover:text-school-blue hover:bg-blue-50 rounded-md transition-colors">
+                      <a href={`/api/documents/${doc.id}/download`}
+                        className="p-1.5 text-gray-400 hover:text-school-blue hover:bg-blue-50 rounded-md transition-colors"
+                        title="Download">
                         <Download className="w-4 h-4" />
                       </a>
                       <button onClick={() => handleDelete(doc.id)}

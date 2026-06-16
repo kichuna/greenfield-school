@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard, Newspaper, Calendar, FileText,
-  Users, Image, Settings, GraduationCap, FolderOpen, LogOut
+  Users, Image, Settings, GraduationCap, FolderOpen, LogOut, Activity
 } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { cn } from "@/lib/utils";
@@ -16,8 +16,9 @@ const navItems = [
   { label: "Admissions",  href: "/admin/admissions",  Icon: FileText,         roles: ["SUPER_ADMIN","ADMIN"] },
   { label: "Alumni",      href: "/admin/alumni",      Icon: GraduationCap,    roles: ["SUPER_ADMIN","ADMIN"] },
   { label: "Gallery",     href: "/admin/gallery",     Icon: Image,            roles: ["SUPER_ADMIN","ADMIN","STAFF"] },
-  { label: "Documents",   href: "/admin/documents",   Icon: FolderOpen,       roles: ["SUPER_ADMIN","ADMIN","STAFF"] },
-  { label: "Users",       href: "/admin/users",       Icon: Users,            roles: ["SUPER_ADMIN"] },
+  { label: "Documents",    href: "/admin/documents",    Icon: FolderOpen,  roles: ["SUPER_ADMIN","ADMIN","STAFF"] },
+  { label: "Student Life", href: "/admin/student-life", Icon: Activity,    roles: ["SUPER_ADMIN","ADMIN"] },
+  { label: "Users",        href: "/admin/users",        Icon: Users,       roles: ["SUPER_ADMIN"] },
   { label: "Settings",    href: "/admin/settings",    Icon: Settings,         roles: ["SUPER_ADMIN"] },
 ];
 

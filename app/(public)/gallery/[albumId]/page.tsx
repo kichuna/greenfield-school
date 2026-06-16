@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { Image as ImageIcon, ArrowLeft } from "lucide-react";
+import { GalleryLightbox } from "@/components/GalleryLightbox";
 
 export const revalidate = 60;
 
@@ -66,26 +67,7 @@ export default async function AlbumPage({ params }: Props) {
             <p className="text-xl font-medium">No photos in this album yet.</p>
           </div>
         ) : (
-          <div className="columns-2 sm:columns-3 lg:columns-4 gap-4 space-y-4">
-            {album.items.map((item) => (
-              <div
-                key={item.id}
-                className="break-inside-avoid rounded-xl overflow-hidden shadow-sm group"
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={item.thumbnailUrl ?? item.url}
-                  alt={item.title}
-                  className="w-full object-cover group-hover:scale-105 transition-transform duration-300"
-                />
-                {item.title && (
-                  <div className="bg-white px-3 py-2">
-                    <p className="text-xs font-medium text-gray-700 truncate">{item.title}</p>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
+          <GalleryLightbox items={album.items} />
         )}
       </div>
     </div>

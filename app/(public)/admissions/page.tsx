@@ -346,10 +346,7 @@ export default function AdmissionsPage() {
                     </div>
                   </div>
                   <a
-                    href={doc.fileUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    download
+                    href={`/api/documents/${doc.id}/download`}
                     className="btn-outline text-xs py-1.5 px-4 gap-1 shrink-0"
                   >
                     <Download className="w-3.5 h-3.5" /> Download

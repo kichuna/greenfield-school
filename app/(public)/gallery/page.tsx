@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { Image as ImageIcon, Layers } from "lucide-react";
+import { GalleryLightbox } from "@/components/GalleryLightbox";
 
 export const metadata: Metadata = {
   title: "Gallery | Greenfield High School",
@@ -103,23 +104,7 @@ export default async function GalleryPage() {
                   <ImageIcon className="w-7 h-7" />
                   Photos
                 </h2>
-                <div className="columns-2 sm:columns-3 lg:columns-4 gap-4 space-y-4">
-                  {ungrouped.map((item) => (
-                    <div key={item.id} className="break-inside-avoid rounded-xl overflow-hidden shadow-sm group">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={item.thumbnailUrl ?? item.url}
-                        alt={item.title}
-                        className="w-full object-cover group-hover:scale-105 transition-transform duration-300"
-                      />
-                      {item.title && (
-                        <div className="bg-white px-3 py-2">
-                          <p className="text-xs font-medium text-gray-700 truncate">{item.title}</p>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
+                <GalleryLightbox items={ungrouped} />
               </section>
             )}
           </>
