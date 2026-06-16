@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { Image as ImageIcon, Layers } from "lucide-react";
 
@@ -64,7 +65,7 @@ export default async function GalleryPage() {
                   {albums.map((album) => {
                     const cover = album.items[0];
                     return (
-                      <div key={album.id} className="card overflow-hidden group">
+                      <Link key={album.id} href={`/gallery/${album.id}`} className="card overflow-hidden group block">
                         <div className="relative h-52 bg-gradient-to-br from-blue-100 to-blue-200 overflow-hidden">
                           {cover ? (
                             /* eslint-disable-next-line @next/next/no-img-element */
@@ -88,7 +89,7 @@ export default async function GalleryPage() {
                             <p className="text-sm text-gray-500 mt-1 line-clamp-2">{album.description}</p>
                           )}
                         </div>
-                      </div>
+                      </Link>
                     );
                   })}
                 </div>

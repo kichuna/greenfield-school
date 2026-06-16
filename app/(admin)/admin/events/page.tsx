@@ -1,12 +1,12 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Link from "next/link";
 import { Plus, Pencil, Trash2, Loader2, Calendar, MapPin, Eye, EyeOff } from "lucide-react";
 
 type Event = {
   id: string;
   title: string;
+  description: string;
   location: string | null;
   startDate: string;
   endDate: string | null;
@@ -67,7 +67,7 @@ export default function AdminEventsPage() {
     setEditId(ev.id);
     setForm({
       title:       ev.title,
-      description: "",
+      description: ev.description,
       location:    ev.location ?? "",
       startDate:   ev.startDate.slice(0, 16),
       endDate:     ev.endDate ? ev.endDate.slice(0, 16) : "",
