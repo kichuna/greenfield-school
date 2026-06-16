@@ -2,8 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { unlink } from "fs/promises";
-import path from "path";
+import { deleteFromCloudinary } from "@/lib/cloudinary";
 
 export async function DELETE(_req: NextRequest, { params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions);
@@ -14,9 +13,8 @@ export async function DELETE(_req: NextRequest, { params }: { params: { id: stri
   const doc = await prisma.academicResource.findUnique({ where: { id: params.id } });
   if (!doc) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  if (doc.fileUrl.startsWith("/uploads/")) {
-    const filepath = path.join(process.cwd(), "public", doc.fileUrl);
-    await unlink(filepath).catch(() => {});
+  if (doc.cloudinaryPublicId) {
+    await deleteFromCloudinary(doc.cloudinaryPublicId).catch(() => {});
   }
 
   await prisma.academicResource.delete({ where: { id: params.id } });

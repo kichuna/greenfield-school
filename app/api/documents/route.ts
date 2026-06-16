@@ -2,8 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { writeFile, mkdir } from "fs/promises";
-import path from "path";
+import { uploadToCloudinary } from "@/lib/cloudinary";
 
 const ALLOWED_TYPES = [
   "application/pdf",
@@ -39,11 +38,11 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const formData   = await req.formData();
-    const file       = formData.get("file") as File | null;
-    const title      = (formData.get("title") as string)?.trim();
+    const formData    = await req.formData();
+    const file        = formData.get("file") as File | null;
+    const title       = (formData.get("title") as string)?.trim();
     const description = formData.get("description") as string | null;
-    const category   = (formData.get("category") as string) || "GENERAL";
+    const category    = (formData.get("category") as string) || "GENERAL";
 
     if (!file)  return NextResponse.json({ error: "No file provided" }, { status: 400 });
     if (!title) return NextResponse.json({ error: "Title required" },   { status: 400 });
@@ -52,7 +51,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "File type not allowed. Upload PDF, Word, Excel, or image files." }, { status: 400 });
     }
 
-    const maxSize = 10 * 1024 * 1024; // 10MB
+    const maxSize = 10 * 1024 * 1024;
     if (file.size > maxSize) {
       return NextResponse.json({ error: "File too large (max 10MB)" }, { status: 400 });
     }
@@ -61,26 +60,23 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Invalid category" }, { status: 400 });
     }
 
-    const uploadDir = path.join(process.cwd(), "public", "uploads", "documents");
-    await mkdir(uploadDir, { recursive: true });
-
-    const ext      = file.name.split(".").pop() ?? "pdf";
-    const filename = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-    const filepath = path.join(uploadDir, filename);
-
-    const buffer = Buffer.from(await file.arrayBuffer());
-    await writeFile(filepath, buffer);
-
-    const fileUrl = `/uploads/documents/${filename}`;
+    const isImage = file.type.startsWith("image/");
+    const buffer  = Buffer.from(await file.arrayBuffer());
+    const { url, publicId } = await uploadToCloudinary(
+      buffer,
+      "documents",
+      isImage ? "image" : "raw",
+    );
 
     const doc = await prisma.academicResource.create({
       data: {
         title,
-        description: description || null,
-        fileUrl,
-        fileType: file.type,
-        category: category as any,
-        isPublished: true,
+        description:        description || null,
+        fileUrl:            url,
+        fileType:           file.type,
+        cloudinaryPublicId: publicId,
+        category:           category as any,
+        isPublished:        true,
       },
     });
 
