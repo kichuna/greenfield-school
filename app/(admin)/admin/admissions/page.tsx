@@ -85,15 +85,15 @@ export default function AdminAdmissionsPage() {
     setWinError("");
     setWinSaved(false);
     try {
-      const res = await fetch("/api/admin/settings", {
-        method:  "PATCH",
+      const res = await fetch("/api/admin/admissions-window", {
+        method:  "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          admissions_override: winSettings.manualOverride,
-          admissions_start:    winSettings.startDate || "",
-          admissions_end:      winSettings.endDate   || "",
-          admissions_message:  winSettings.closedMessage,
-          admissions_year:     winSettings.academicYear,
+          manualOverride: winSettings.manualOverride,
+          startDate:      winSettings.startDate || "",
+          endDate:        winSettings.endDate   || "",
+          closedMessage:  winSettings.closedMessage,
+          academicYear:   winSettings.academicYear,
         }),
       });
       if (!res.ok) {
@@ -172,15 +172,18 @@ export default function AdminAdmissionsPage() {
           </button>
         </div>
 
+        {winError && (
+          <div className="px-6 py-3 bg-red-50 border-b border-red-100 text-red-700 text-sm font-medium">
+            {winError}
+          </div>
+        )}
+
         {winLoading ? (
           <div className="flex items-center justify-center py-8">
             <Loader2 className="w-5 h-5 animate-spin text-gray-400" />
           </div>
         ) : (
           <div className="p-6 space-y-5">
-            {winError && (
-              <p className="text-red-600 text-sm">{winError}</p>
-            )}
 
             {/* Override toggle */}
             <div>
