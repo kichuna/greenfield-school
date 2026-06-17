@@ -100,16 +100,11 @@ export default function AdminAdmissionsPage() {
         const data = await res.json().catch(() => ({}));
         throw new Error(data.error ?? `Error ${res.status}`);
       }
-      // Recompute isOpen locally
-      let isOpen = true;
-      if (winSettings.manualOverride === "closed") isOpen = false;
-      else if (winSettings.manualOverride === "open") isOpen = true;
-      else {
-        const now = Date.now();
-        if (winSettings.startDate && now < new Date(winSettings.startDate).getTime()) isOpen = false;
-        if (winSettings.endDate   && now > new Date(winSettings.endDate).getTime())   isOpen = false;
+      // Re-fetch from server to get the authoritative persisted state
+      const updated = await fetch("/api/admin/admissions-window").then((r) => r.json()).catch(() => null);
+      if (updated) {
+        setWinSettings((w) => ({ ...w, isOpen: updated.isOpen ?? w.isOpen }));
       }
-      setWinSettings((w) => ({ ...w, isOpen }));
       setWinSaved(true);
       setTimeout(() => setWinSaved(false), 3000);
     } catch (err: any) {
@@ -200,7 +195,17 @@ export default function AdminAdmissionsPage() {
                   <button
                     key={opt}
                     type="button"
-                    onClick={() => setWinSettings((w) => ({ ...w, manualOverride: opt }))}
+                    onClick={() => setWinSettings((w) => {
+                      let isOpen = true;
+                      if (opt === "closed") isOpen = false;
+                      else if (opt === "open") isOpen = true;
+                      else {
+                        const now = Date.now();
+                        if (w.startDate && now < new Date(w.startDate).getTime()) isOpen = false;
+                        if (w.endDate   && now > new Date(w.endDate).getTime())   isOpen = false;
+                      }
+                      return { ...w, manualOverride: opt, isOpen };
+                    })}
                     className={`flex items-center gap-2 px-4 py-2 rounded-lg border text-sm font-medium transition-colors ${
                       winSettings.manualOverride === opt
                         ? opt === "closed"
