@@ -59,16 +59,16 @@ export default function AdminAdmissionsPage() {
   const perPage = 20;
 
   // Window settings
-  const [window,      setWindow]      = useState<WindowSettings>(DEFAULT_WINDOW);
-  const [winLoading,  setWinLoading]  = useState(true);
-  const [winSaving,   setWinSaving]   = useState(false);
-  const [winSaved,    setWinSaved]    = useState(false);
-  const [winError,    setWinError]    = useState("");
+  const [winSettings,  setWinSettings] = useState<WindowSettings>(DEFAULT_WINDOW);
+  const [winLoading,   setWinLoading]  = useState(true);
+  const [winSaving,    setWinSaving]   = useState(false);
+  const [winSaved,     setWinSaved]    = useState(false);
+  const [winError,     setWinError]    = useState("");
 
   useEffect(() => {
     fetch("/api/admissions/window")
       .then((r) => r.json())
-      .then((d) => setWindow({
+      .then((d) => setWinSettings({
         manualOverride: d.manualOverride ?? "auto",
         startDate:      d.startDate ? d.startDate.slice(0, 10) : "",
         endDate:        d.endDate   ? d.endDate.slice(0, 10)   : "",
@@ -89,28 +89,31 @@ export default function AdminAdmissionsPage() {
         method:  "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          manualOverride: window.manualOverride,
-          startDate:      window.startDate || "",
-          endDate:        window.endDate   || "",
-          closedMessage:  window.closedMessage,
-          academicYear:   window.academicYear,
+          manualOverride: winSettings.manualOverride,
+          startDate:      winSettings.startDate || "",
+          endDate:        winSettings.endDate   || "",
+          closedMessage:  winSettings.closedMessage,
+          academicYear:   winSettings.academicYear,
         }),
       });
-      if (!res.ok) throw new Error();
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error ?? `Error ${res.status}`);
+      }
       // Recompute isOpen locally
       let isOpen = true;
-      if (window.manualOverride === "closed") isOpen = false;
-      else if (window.manualOverride === "open") isOpen = true;
+      if (winSettings.manualOverride === "closed") isOpen = false;
+      else if (winSettings.manualOverride === "open") isOpen = true;
       else {
         const now = Date.now();
-        if (window.startDate && now < new Date(window.startDate).getTime()) isOpen = false;
-        if (window.endDate   && now > new Date(window.endDate).getTime())   isOpen = false;
+        if (winSettings.startDate && now < new Date(winSettings.startDate).getTime()) isOpen = false;
+        if (winSettings.endDate   && now > new Date(winSettings.endDate).getTime())   isOpen = false;
       }
-      setWindow((w) => ({ ...w, isOpen }));
+      setWinSettings((w) => ({ ...w, isOpen }));
       setWinSaved(true);
       setTimeout(() => setWinSaved(false), 3000);
-    } catch {
-      setWinError("Failed to save. Try again.");
+    } catch (err: any) {
+      setWinError(err.message ?? "Failed to save. Try again.");
     } finally {
       setWinSaving(false);
     }
@@ -152,16 +155,16 @@ export default function AdminAdmissionsPage() {
       <div className="mb-8 bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
           <div className="flex items-center gap-3">
-            <div className={`w-2.5 h-2.5 rounded-full ${window.isOpen ? "bg-green-500" : "bg-red-500"}`} />
+            <div className={`w-2.5 h-2.5 rounded-full ${winSettings.isOpen ? "bg-green-500" : "bg-red-500"}`} />
             <span className="font-semibold text-gray-900 text-sm">
               Admissions Window
             </span>
             <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${
-              window.isOpen
+              winSettings.isOpen
                 ? "bg-green-50 text-green-700"
                 : "bg-red-50 text-red-700"
             }`}>
-              {window.isOpen ? "Open" : "Closed"}
+              {winSettings.isOpen ? "Open" : "Closed"}
             </span>
           </div>
           <button
@@ -196,9 +199,10 @@ export default function AdminAdmissionsPage() {
                 {(["auto", "open", "closed"] as const).map((opt) => (
                   <button
                     key={opt}
-                    onClick={() => setWindow((w) => ({ ...w, manualOverride: opt }))}
+                    type="button"
+                    onClick={() => setWinSettings((w) => ({ ...w, manualOverride: opt }))}
                     className={`flex items-center gap-2 px-4 py-2 rounded-lg border text-sm font-medium transition-colors ${
-                      window.manualOverride === opt
+                      winSettings.manualOverride === opt
                         ? opt === "closed"
                           ? "bg-red-600 text-white border-red-600"
                           : opt === "open"
@@ -215,9 +219,9 @@ export default function AdminAdmissionsPage() {
                 ))}
               </div>
               <p className="text-xs text-gray-400 mt-1.5">
-                {window.manualOverride === "auto"   && "Opens/closes based on the dates you set below."}
-                {window.manualOverride === "open"   && "Admissions are forced open regardless of dates."}
-                {window.manualOverride === "closed" && "Admissions are forced closed regardless of dates."}
+                {winSettings.manualOverride === "auto"   && "Opens/closes based on the dates you set below."}
+                {winSettings.manualOverride === "open"   && "Admissions are forced open regardless of dates."}
+                {winSettings.manualOverride === "closed" && "Admissions are forced closed regardless of dates."}
               </p>
             </div>
 
@@ -228,8 +232,8 @@ export default function AdminAdmissionsPage() {
                 <input
                   type="date"
                   className="input text-sm"
-                  value={window.startDate}
-                  onChange={(e) => setWindow((w) => ({ ...w, startDate: e.target.value }))}
+                  value={winSettings.startDate}
+                  onChange={(e) => setWinSettings((w) => ({ ...w, startDate: e.target.value }))}
                 />
                 <p className="text-xs text-gray-400 mt-1">Leave blank for no start restriction.</p>
               </div>
@@ -238,8 +242,8 @@ export default function AdminAdmissionsPage() {
                 <input
                   type="date"
                   className="input text-sm"
-                  value={window.endDate}
-                  onChange={(e) => setWindow((w) => ({ ...w, endDate: e.target.value }))}
+                  value={winSettings.endDate}
+                  onChange={(e) => setWinSettings((w) => ({ ...w, endDate: e.target.value }))}
                 />
                 <p className="text-xs text-gray-400 mt-1">Leave blank for no end restriction.</p>
               </div>
@@ -247,8 +251,8 @@ export default function AdminAdmissionsPage() {
                 <label className="label text-xs">Academic Year</label>
                 <input
                   className="input text-sm"
-                  value={window.academicYear}
-                  onChange={(e) => setWindow((w) => ({ ...w, academicYear: e.target.value }))}
+                  value={winSettings.academicYear}
+                  onChange={(e) => setWinSettings((w) => ({ ...w, academicYear: e.target.value }))}
                   placeholder="e.g. 2025/2026"
                 />
                 <p className="text-xs text-gray-400 mt-1">Shown in the hero section.</p>
@@ -260,8 +264,8 @@ export default function AdminAdmissionsPage() {
               <label className="label text-xs">Message Shown When Closed</label>
               <input
                 className="input text-sm"
-                value={window.closedMessage}
-                onChange={(e) => setWindow((w) => ({ ...w, closedMessage: e.target.value }))}
+                value={winSettings.closedMessage}
+                onChange={(e) => setWinSettings((w) => ({ ...w, closedMessage: e.target.value }))}
                 placeholder="Admissions are currently closed. Please check back later."
               />
             </div>
