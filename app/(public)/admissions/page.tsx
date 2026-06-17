@@ -57,10 +57,13 @@ const faqs = [
 export default function AdmissionsPage() {
   const [submitted,  setSubmitted]  = useState(false);
   const [admDocs,    setAdmDocs]    = useState<{ id: string; title: string; fileUrl: string; description: string | null }[]>([]);
-  const [windowOpen,        setWindowOpen]        = useState(true);
-  const [closedMessage,     setClosedMessage]     = useState("Admissions are currently closed. Please check back later.");
-  const [admissionsYear,    setAdmissionsYear]    = useState("2025");
-  const [windowLoaded,      setWindowLoaded]      = useState(false);
+  const [windowOpen,     setWindowOpen]     = useState(true);
+  const [closedMessage,  setClosedMessage]  = useState("Admissions are currently closed. Please check back later.");
+  const [admissionsYear, setAdmissionsYear] = useState("2025");
+  const [windowLoaded,   setWindowLoaded]   = useState(false);
+  const [endDate,        setEndDate]        = useState<string | null>(null);
+  const [startDate,      setStartDate]      = useState<string | null>(null);
+  const [countdown,      setCountdown]      = useState("");
 
   useEffect(() => {
     fetch("/api/documents?category=ADMISSIONS")
@@ -74,10 +77,55 @@ export default function AdmissionsPage() {
         setWindowOpen(d.isOpen ?? true);
         setClosedMessage(d.closedMessage || "Admissions are currently closed. Please check back later.");
         setAdmissionsYear(d.academicYear || "2025");
+        setEndDate(d.endDate || null);
+        setStartDate(d.startDate || null);
       })
       .catch(() => {})
       .finally(() => setWindowLoaded(true));
   }, []);
+
+  // Live countdown ticker
+  useEffect(() => {
+    function tick() {
+      const now = Date.now();
+      // When open: count down to closing
+      if (windowOpen && endDate) {
+        const diff = new Date(endDate).getTime() - now;
+        if (diff <= 0) { setCountdown("Closing now"); return; }
+        const d = Math.floor(diff / 86_400_000);
+        const h = Math.floor((diff % 86_400_000) / 3_600_000);
+        const m = Math.floor((diff % 3_600_000)  / 60_000);
+        const s = Math.floor((diff % 60_000)      / 1_000);
+        const parts = [];
+        if (d > 0) parts.push(`${d}d`);
+        parts.push(`${String(h).padStart(2, "0")}h`);
+        parts.push(`${String(m).padStart(2, "0")}m`);
+        parts.push(`${String(s).padStart(2, "0")}s`);
+        setCountdown(parts.join(" "));
+        return;
+      }
+      // When closed: count down to opening
+      if (!windowOpen && startDate) {
+        const diff = new Date(startDate).getTime() - now;
+        if (diff <= 0) { setCountdown(""); return; }
+        const d = Math.floor(diff / 86_400_000);
+        const h = Math.floor((diff % 86_400_000) / 3_600_000);
+        const m = Math.floor((diff % 3_600_000)  / 60_000);
+        const s = Math.floor((diff % 60_000)      / 1_000);
+        const parts = [];
+        if (d > 0) parts.push(`${d}d`);
+        parts.push(`${String(h).padStart(2, "0")}h`);
+        parts.push(`${String(m).padStart(2, "0")}m`);
+        parts.push(`${String(s).padStart(2, "0")}s`);
+        setCountdown(parts.join(" "));
+        return;
+      }
+      setCountdown("");
+    }
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [windowOpen, endDate, startDate]);
 
   const [refNumber,  setRefNumber]  = useState("");
   const [trackRef,   setTrackRef]   = useState("");
@@ -129,6 +177,19 @@ export default function AdmissionsPage() {
             </div>
             <h1 className="text-4xl md:text-5xl font-heading font-bold mb-6">Admissions Currently Closed</h1>
             <p className="text-xl text-gray-300 max-w-2xl mx-auto">{closedMessage}</p>
+            {countdown && (
+              <div className="mt-8 inline-block">
+                <p className="text-gray-400 text-xs uppercase tracking-widest mb-3">Applications open in</p>
+                <div className="flex items-center gap-3 justify-center">
+                  {countdown.split(" ").map((part) => (
+                    <div key={part} className="bg-white/10 border border-white/20 rounded-xl px-4 py-3 min-w-[64px] text-center">
+                      <span className="text-2xl font-bold font-mono text-white">{part.replace(/[dhms]/, "")}</span>
+                      <p className="text-gray-400 text-xs mt-0.5 uppercase">{part.replace(/\d+/, "")}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </section>
       ) : (
@@ -141,6 +202,19 @@ export default function AdmissionsPage() {
             <p className="text-xl text-blue-100 max-w-2xl mx-auto">
               Start your journey to excellence. Apply online in minutes.
             </p>
+            {countdown && (
+              <div className="mt-8 inline-block">
+                <p className="text-blue-200 text-xs uppercase tracking-widest mb-3">Applications close in</p>
+                <div className="flex items-center gap-3 justify-center">
+                  {countdown.split(" ").map((part) => (
+                    <div key={part} className="bg-white/10 border border-white/20 rounded-xl px-4 py-3 min-w-[64px] text-center">
+                      <span className="text-2xl font-bold font-mono text-white">{part.replace(/[dhms]/, "")}</span>
+                      <p className="text-blue-200 text-xs mt-0.5 uppercase">{part.replace(/\d+/, "")}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </section>
       )}
