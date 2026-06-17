@@ -33,6 +33,7 @@ const navLinks = [
   { label: "Alumni",       href: "/alumni" },
   { label: "News",         href: "/news" },
   { label: "Gallery",      href: "/gallery" },
+  { label: "Tenders",      href: "/tenders" },
   { label: "Contact",      href: "/contact" },
 ];
 

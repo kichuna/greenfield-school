@@ -34,6 +34,7 @@ model User {
   accounts  Account[]
   newsItems NewsItem[]    @relation("AuthoredNews")
   events    Event[]       @relation("CreatedEvents")
+  tenders   Tender[]      @relation("CreatedTenders")
   alumni    AlumniProfile?
 
   @@index([email])
@@ -291,6 +292,34 @@ model ContactInquiry {
   message   String        @db.Text
   status    InquiryStatus @default(NEW)
   createdAt DateTime      @default(now())
+}
+
+// ─── Tenders ──────────────────────────────────────────────────────────────────
+
+enum TenderCategory {
+  GOODS
+  SERVICES
+  WORKS
+  CONSULTANCY
+  OTHER
+}
+
+model Tender {
+  id              String         @id @default(cuid())
+  title           String
+  description     String         @db.Text
+  referenceNumber String         @unique
+  category        TenderCategory @default(GOODS)
+  openDate        DateTime
+  closingDate     DateTime
+  documentUrl     String?
+  isPublished     Boolean        @default(false)
+  createdById     String
+  createdBy       User           @relation("CreatedTenders", fields: [createdById], references: [id])
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  @@index([closingDate, isPublished])
 }
 
 // ─── Site Settings ─────────────────────────────────────────────────────────────
