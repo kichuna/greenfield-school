@@ -20,8 +20,33 @@ const applicationSchema = z.object({
   additionalInfo:     z.string().optional(),
 });
 
+async function admissionsAreOpen(): Promise<boolean> {
+  const rows = await prisma.siteSetting.findMany({
+    where: { key: { in: ["admissions_override", "admissions_start", "admissions_end"] } },
+  });
+  const s: Record<string, string> = {};
+  rows.forEach((r) => { s[r.key] = r.value; });
+
+  const override = s.admissions_override ?? "auto";
+  if (override === "closed") return false;
+  if (override === "open")   return true;
+
+  const now = Date.now();
+  if (s.admissions_start && now < new Date(s.admissions_start).getTime()) return false;
+  if (s.admissions_end   && now > new Date(s.admissions_end).getTime())   return false;
+  return true;
+}
+
 export async function POST(req: NextRequest) {
   try {
+    const open = await admissionsAreOpen();
+    if (!open) {
+      return NextResponse.json(
+        { success: false, error: "Admissions are currently closed." },
+        { status: 403 },
+      );
+    }
+
     const body = await req.json();
     const data = applicationSchema.parse(body);
 

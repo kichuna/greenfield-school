@@ -1,10 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Link from "next/link";
 import {
-  FileText, Upload, CheckCircle, Clock, Search,
-  Download, ChevronDown, ChevronUp, ArrowRight, AlertCircle
+  FileText, CheckCircle, Clock, Search,
+  Download, ChevronDown, ChevronUp, AlertCircle, CalendarOff
 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -58,12 +57,26 @@ const faqs = [
 export default function AdmissionsPage() {
   const [submitted,  setSubmitted]  = useState(false);
   const [admDocs,    setAdmDocs]    = useState<{ id: string; title: string; fileUrl: string; description: string | null }[]>([]);
+  const [windowOpen,        setWindowOpen]        = useState(true);
+  const [closedMessage,     setClosedMessage]     = useState("Admissions are currently closed. Please check back later.");
+  const [admissionsYear,    setAdmissionsYear]    = useState("2025");
+  const [windowLoaded,      setWindowLoaded]      = useState(false);
 
   useEffect(() => {
     fetch("/api/documents?category=ADMISSIONS")
       .then((r) => r.json())
       .then((data) => setAdmDocs(Array.isArray(data) ? data : []))
       .catch(() => {});
+
+    fetch("/api/admissions/window")
+      .then((r) => r.json())
+      .then((d) => {
+        setWindowOpen(d.isOpen ?? true);
+        setClosedMessage(d.closedMessage || "Admissions are currently closed. Please check back later.");
+        setAdmissionsYear(d.academicYear || "2025");
+      })
+      .catch(() => {})
+      .finally(() => setWindowLoaded(true));
   }, []);
 
   const [refNumber,  setRefNumber]  = useState("");
@@ -109,10 +122,14 @@ export default function AdmissionsPage() {
       {/* Hero */}
       <section className="bg-gradient-to-r from-school-blue to-primary-700 text-white py-24">
         <div className="max-w-7xl mx-auto px-4 text-center">
-          <p className="text-school-gold font-semibold text-sm uppercase tracking-wider mb-3">Admissions 2025</p>
+          <p className="text-school-gold font-semibold text-sm uppercase tracking-wider mb-3">
+            Admissions {admissionsYear}
+          </p>
           <h1 className="text-4xl md:text-5xl font-heading font-bold mb-6">Join Greenfield High School</h1>
           <p className="text-xl text-blue-100 max-w-2xl mx-auto">
-            Start your journey to excellence. Apply online in minutes.
+            {windowOpen
+              ? "Start your journey to excellence. Apply online in minutes."
+              : closedMessage}
           </p>
         </div>
       </section>
@@ -141,10 +158,16 @@ export default function AdmissionsPage() {
         <div className="max-w-3xl mx-auto px-4 sm:px-6">
           <div className="text-center mb-10">
             <h2 className="section-heading mx-auto">Online Application Form</h2>
-            <p className="text-gray-500">All fields marked * are required.</p>
+            {windowOpen && <p className="text-gray-500">All fields marked * are required.</p>}
           </div>
 
-          {submitted ? (
+          {windowLoaded && !windowOpen ? (
+            <div className="text-center py-16 bg-gray-50 rounded-2xl border border-gray-200">
+              <CalendarOff className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+              <h3 className="text-xl font-heading font-bold text-gray-700 mb-2">Admissions Closed</h3>
+              <p className="text-gray-500 max-w-md mx-auto text-sm leading-relaxed">{closedMessage}</p>
+            </div>
+          ) : submitted ? (
             <div className="text-center py-16 bg-green-50 rounded-2xl border border-green-200">
               <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
               <h3 className="text-2xl font-heading font-bold text-gray-900 mb-2">Application Submitted!</h3>

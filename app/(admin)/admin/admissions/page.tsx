@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { FileText, Eye, Trash2, Loader2 } from "lucide-react";
+import { FileText, Eye, Trash2, Loader2, Save, CheckCircle2, Lock, Unlock, Clock } from "lucide-react";
 
 interface Application {
   id: string;
@@ -31,6 +31,24 @@ function fmt(d: string) {
   return new Date(d).toLocaleDateString("en-KE", { month: "short", day: "numeric", year: "numeric" });
 }
 
+type WindowSettings = {
+  manualOverride: "open" | "closed" | "auto";
+  startDate:      string;
+  endDate:        string;
+  closedMessage:  string;
+  academicYear:   string;
+  isOpen:         boolean;
+};
+
+const DEFAULT_WINDOW: WindowSettings = {
+  manualOverride: "auto",
+  startDate:      "",
+  endDate:        "",
+  closedMessage:  "Admissions are currently closed. Please check back later.",
+  academicYear:   "",
+  isOpen:         true,
+};
+
 export default function AdminAdmissionsPage() {
   const [apps,       setApps]       = useState<Application[]>([]);
   const [loading,    setLoading]    = useState(true);
@@ -39,6 +57,64 @@ export default function AdminAdmissionsPage() {
   const [page,       setPage]       = useState(1);
   const [total,      setTotal]      = useState(0);
   const perPage = 20;
+
+  // Window settings
+  const [window,      setWindow]      = useState<WindowSettings>(DEFAULT_WINDOW);
+  const [winLoading,  setWinLoading]  = useState(true);
+  const [winSaving,   setWinSaving]   = useState(false);
+  const [winSaved,    setWinSaved]    = useState(false);
+  const [winError,    setWinError]    = useState("");
+
+  useEffect(() => {
+    fetch("/api/admissions/window")
+      .then((r) => r.json())
+      .then((d) => setWindow({
+        manualOverride: d.manualOverride ?? "auto",
+        startDate:      d.startDate ? d.startDate.slice(0, 10) : "",
+        endDate:        d.endDate   ? d.endDate.slice(0, 10)   : "",
+        closedMessage:  d.closedMessage ?? DEFAULT_WINDOW.closedMessage,
+        academicYear:   d.academicYear  ?? "",
+        isOpen:         d.isOpen ?? true,
+      }))
+      .catch(() => {})
+      .finally(() => setWinLoading(false));
+  }, []);
+
+  async function saveWindow() {
+    setWinSaving(true);
+    setWinError("");
+    setWinSaved(false);
+    try {
+      const res = await fetch("/api/admissions/window", {
+        method:  "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          manualOverride: window.manualOverride,
+          startDate:      window.startDate || "",
+          endDate:        window.endDate   || "",
+          closedMessage:  window.closedMessage,
+          academicYear:   window.academicYear,
+        }),
+      });
+      if (!res.ok) throw new Error();
+      // Recompute isOpen locally
+      let isOpen = true;
+      if (window.manualOverride === "closed") isOpen = false;
+      else if (window.manualOverride === "open") isOpen = true;
+      else {
+        const now = Date.now();
+        if (window.startDate && now < new Date(window.startDate).getTime()) isOpen = false;
+        if (window.endDate   && now > new Date(window.endDate).getTime())   isOpen = false;
+      }
+      setWindow((w) => ({ ...w, isOpen }));
+      setWinSaved(true);
+      setTimeout(() => setWinSaved(false), 3000);
+    } catch {
+      setWinError("Failed to save. Try again.");
+    } finally {
+      setWinSaving(false);
+    }
+  }
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -72,6 +148,127 @@ export default function AdminAdmissionsPage() {
 
   return (
     <div>
+      {/* ── Admissions Window Control ── */}
+      <div className="mb-8 bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+          <div className="flex items-center gap-3">
+            <div className={`w-2.5 h-2.5 rounded-full ${window.isOpen ? "bg-green-500" : "bg-red-500"}`} />
+            <span className="font-semibold text-gray-900 text-sm">
+              Admissions Window
+            </span>
+            <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${
+              window.isOpen
+                ? "bg-green-50 text-green-700"
+                : "bg-red-50 text-red-700"
+            }`}>
+              {window.isOpen ? "Open" : "Closed"}
+            </span>
+          </div>
+          <button
+            onClick={saveWindow}
+            disabled={winSaving || winLoading}
+            className="btn-primary text-sm py-1.5"
+          >
+            {winSaving ? (
+              <><Loader2 className="w-4 h-4 animate-spin" /> Saving…</>
+            ) : winSaved ? (
+              <><CheckCircle2 className="w-4 h-4" /> Saved!</>
+            ) : (
+              <><Save className="w-4 h-4" /> Save</>
+            )}
+          </button>
+        </div>
+
+        {winLoading ? (
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="w-5 h-5 animate-spin text-gray-400" />
+          </div>
+        ) : (
+          <div className="p-6 space-y-5">
+            {winError && (
+              <p className="text-red-600 text-sm">{winError}</p>
+            )}
+
+            {/* Override toggle */}
+            <div>
+              <label className="label text-xs mb-2">Access Control</label>
+              <div className="flex gap-2 flex-wrap">
+                {(["auto", "open", "closed"] as const).map((opt) => (
+                  <button
+                    key={opt}
+                    onClick={() => setWindow((w) => ({ ...w, manualOverride: opt }))}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-lg border text-sm font-medium transition-colors ${
+                      window.manualOverride === opt
+                        ? opt === "closed"
+                          ? "bg-red-600 text-white border-red-600"
+                          : opt === "open"
+                          ? "bg-green-600 text-white border-green-600"
+                          : "bg-school-blue text-white border-school-blue"
+                        : "bg-white text-gray-600 border-gray-200 hover:border-gray-300"
+                    }`}
+                  >
+                    {opt === "closed" && <Lock className="w-3.5 h-3.5" />}
+                    {opt === "open"   && <Unlock className="w-3.5 h-3.5" />}
+                    {opt === "auto"   && <Clock className="w-3.5 h-3.5" />}
+                    {opt === "auto" ? "Date-driven (auto)" : opt.charAt(0).toUpperCase() + opt.slice(1)}
+                  </button>
+                ))}
+              </div>
+              <p className="text-xs text-gray-400 mt-1.5">
+                {window.manualOverride === "auto"   && "Opens/closes based on the dates you set below."}
+                {window.manualOverride === "open"   && "Admissions are forced open regardless of dates."}
+                {window.manualOverride === "closed" && "Admissions are forced closed regardless of dates."}
+              </p>
+            </div>
+
+            {/* Date window */}
+            <div className="grid sm:grid-cols-3 gap-4">
+              <div>
+                <label className="label text-xs">Opens On</label>
+                <input
+                  type="date"
+                  className="input text-sm"
+                  value={window.startDate}
+                  onChange={(e) => setWindow((w) => ({ ...w, startDate: e.target.value }))}
+                />
+                <p className="text-xs text-gray-400 mt-1">Leave blank for no start restriction.</p>
+              </div>
+              <div>
+                <label className="label text-xs">Closes On</label>
+                <input
+                  type="date"
+                  className="input text-sm"
+                  value={window.endDate}
+                  onChange={(e) => setWindow((w) => ({ ...w, endDate: e.target.value }))}
+                />
+                <p className="text-xs text-gray-400 mt-1">Leave blank for no end restriction.</p>
+              </div>
+              <div>
+                <label className="label text-xs">Academic Year</label>
+                <input
+                  className="input text-sm"
+                  value={window.academicYear}
+                  onChange={(e) => setWindow((w) => ({ ...w, academicYear: e.target.value }))}
+                  placeholder="e.g. 2025/2026"
+                />
+                <p className="text-xs text-gray-400 mt-1">Shown in the hero section.</p>
+              </div>
+            </div>
+
+            {/* Closed message */}
+            <div>
+              <label className="label text-xs">Message Shown When Closed</label>
+              <input
+                className="input text-sm"
+                value={window.closedMessage}
+                onChange={(e) => setWindow((w) => ({ ...w, closedMessage: e.target.value }))}
+                placeholder="Admissions are currently closed. Please check back later."
+              />
+            </div>
+          </div>
+        )}
+      </div>
+
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-heading font-bold text-gray-900">Admissions</h1>
