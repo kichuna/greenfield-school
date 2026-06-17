@@ -85,15 +85,15 @@ export default function AdminAdmissionsPage() {
     setWinError("");
     setWinSaved(false);
     try {
-      const res = await fetch("/api/admin/admissions-window", {
-        method:  "PUT",
+      const res = await fetch("/api/admin/settings", {
+        method:  "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          manualOverride: winSettings.manualOverride,
-          startDate:      winSettings.startDate || "",
-          endDate:        winSettings.endDate   || "",
-          closedMessage:  winSettings.closedMessage,
-          academicYear:   winSettings.academicYear,
+          admissions_override: winSettings.manualOverride,
+          admissions_start:    winSettings.startDate || "",
+          admissions_end:      winSettings.endDate   || "",
+          admissions_message:  winSettings.closedMessage,
+          admissions_year:     winSettings.academicYear,
         }),
       });
       if (!res.ok) {
