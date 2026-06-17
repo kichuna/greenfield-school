@@ -66,7 +66,7 @@ export default function AdminAdmissionsPage() {
   const [winError,     setWinError]    = useState("");
 
   useEffect(() => {
-    fetch("/api/admissions/window")
+    fetch("/api/admin/admissions-window")
       .then((r) => r.json())
       .then((d) => setWinSettings({
         manualOverride: d.manualOverride ?? "auto",
@@ -85,7 +85,7 @@ export default function AdminAdmissionsPage() {
     setWinError("");
     setWinSaved(false);
     try {
-      const res = await fetch("/api/admissions/window", {
+      const res = await fetch("/api/admin/admissions-window", {
         method:  "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

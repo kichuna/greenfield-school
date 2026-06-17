@@ -68,7 +68,7 @@ export default function AdmissionsPage() {
       .then((data) => setAdmDocs(Array.isArray(data) ? data : []))
       .catch(() => {});
 
-    fetch("/api/admissions/window")
+    fetch("/api/admin/admissions-window")
       .then((r) => r.json())
       .then((d) => {
         setWindowOpen(d.isOpen ?? true);
