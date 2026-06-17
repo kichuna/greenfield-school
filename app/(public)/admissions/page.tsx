@@ -120,19 +120,30 @@ export default function AdmissionsPage() {
   return (
     <>
       {/* Hero */}
-      <section className="bg-gradient-to-r from-school-blue to-primary-700 text-white py-24">
-        <div className="max-w-7xl mx-auto px-4 text-center">
-          <p className="text-school-gold font-semibold text-sm uppercase tracking-wider mb-3">
-            Admissions {admissionsYear}
-          </p>
-          <h1 className="text-4xl md:text-5xl font-heading font-bold mb-6">Join Greenfield High School</h1>
-          <p className="text-xl text-blue-100 max-w-2xl mx-auto">
-            {windowOpen
-              ? "Start your journey to excellence. Apply online in minutes."
-              : closedMessage}
-          </p>
-        </div>
-      </section>
+      {windowLoaded && !windowOpen ? (
+        <section className="bg-gradient-to-r from-gray-800 to-gray-900 text-white py-24">
+          <div className="max-w-7xl mx-auto px-4 text-center">
+            <div className="inline-flex items-center gap-2 bg-red-500/20 border border-red-400/40 text-red-300 text-sm font-semibold px-4 py-1.5 rounded-full mb-6">
+              <CalendarOff className="w-4 h-4" />
+              Applications Closed
+            </div>
+            <h1 className="text-4xl md:text-5xl font-heading font-bold mb-6">Admissions Currently Closed</h1>
+            <p className="text-xl text-gray-300 max-w-2xl mx-auto">{closedMessage}</p>
+          </div>
+        </section>
+      ) : (
+        <section className="bg-gradient-to-r from-school-blue to-primary-700 text-white py-24">
+          <div className="max-w-7xl mx-auto px-4 text-center">
+            <p className="text-school-gold font-semibold text-sm uppercase tracking-wider mb-3">
+              Admissions {admissionsYear}
+            </p>
+            <h1 className="text-4xl md:text-5xl font-heading font-bold mb-6">Join Greenfield High School</h1>
+            <p className="text-xl text-blue-100 max-w-2xl mx-auto">
+              Start your journey to excellence. Apply online in minutes.
+            </p>
+          </div>
+        </section>
+      )}
 
       {/* How to Apply */}
       <section id="how-to-apply" className="py-20 bg-gray-50 scroll-mt-20">
