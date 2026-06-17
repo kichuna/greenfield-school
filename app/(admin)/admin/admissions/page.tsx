@@ -100,11 +100,6 @@ export default function AdminAdmissionsPage() {
         const data = await res.json().catch(() => ({}));
         throw new Error(data.error ?? `Error ${res.status}`);
       }
-      // Re-fetch from server to get the authoritative persisted state
-      const updated = await fetch("/api/admin/admissions-window").then((r) => r.json()).catch(() => null);
-      if (updated) {
-        setWinSettings((w) => ({ ...w, isOpen: updated.isOpen ?? w.isOpen }));
-      }
       setWinSaved(true);
       setTimeout(() => setWinSaved(false), 3000);
     } catch (err: any) {
