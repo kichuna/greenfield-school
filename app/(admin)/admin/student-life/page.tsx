@@ -271,7 +271,7 @@ export default function AdminStudentLifePage() {
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="label text-xs">Members</label>
-                    <input className="input text-sm" type="number" min="0" value={club.members}
+                    <input className="input text-sm" type="number" min="0" value={club.members || ""}
                       onChange={(e) => updateClub(i, "members", parseInt(e.target.value) || 0)}
                       placeholder="45" />
                   </div>

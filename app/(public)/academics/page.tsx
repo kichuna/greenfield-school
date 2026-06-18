@@ -10,11 +10,26 @@ export const metadata: Metadata = {
 
 export const revalidate = 60;
 
-const subjects = {
-  stem:       ["Mathematics", "Physics", "Chemistry", "Biology", "Computer Studies", "Agriculture"],
-  humanities: ["History & Government", "Geography", "Christian Religious Education", "Kiswahili", "English", "French"],
-  arts:       ["Fine Art", "Music", "Drama", "Home Science", "Drawing & Design", "Crafts"],
+type Pathway = { desc: string; subjects: string[] };
+type ExamStat = { label: string; value: string; note: string };
+
+const DEFAULT_STEM: Pathway = {
+  desc: "Our Science, Technology, Engineering, and Mathematics pathway prepares students for careers in medicine, engineering, ICT, and research. Students benefit from fully equipped labs and coding workshops.",
+  subjects: ["Mathematics", "Physics", "Chemistry", "Biology", "Computer Studies", "Agriculture"],
 };
+const DEFAULT_HUMANITIES: Pathway = {
+  desc: "Developing critical thinkers, communicators, and global citizens. Students explore history, languages, social sciences, and geography, preparing for law, journalism, education, and public service.",
+  subjects: ["History & Government", "Geography", "Christian Religious Education", "Kiswahili", "English", "French"],
+};
+const DEFAULT_ARTS: Pathway = {
+  desc: "Cultivating creativity, expression, and artistic excellence. Students in this pathway pursue visual arts, music, drama, and design, with pathways into fine arts, fashion, film, and creative industries.",
+  subjects: ["Fine Art", "Music", "Drama", "Home Science", "Drawing & Design", "Crafts"],
+};
+const DEFAULT_STATS: ExamStat[] = [
+  { label: "KCSE Mean Grade",      value: "B+ (68.4)", note: "2024 results"          },
+  { label: "University Placement", value: "98%",       note: "of Form 4 leavers"     },
+  { label: "National Ranking",     value: "Top 50",    note: "Nationally recognised" },
+];
 
 const categoryLabel: Record<string, string> = {
   CURRICULUM:      "Curriculum",
@@ -22,7 +37,6 @@ const categoryLabel: Record<string, string> = {
   CAREER_GUIDANCE: "Career",
   GENERAL:         "General",
 };
-
 const categoryColor: Record<string, string> = {
   CURRICULUM:      "bg-blue-50 text-school-blue",
   EXAM_INFO:       "bg-purple-50 text-purple-700",
@@ -30,11 +44,27 @@ const categoryColor: Record<string, string> = {
   GENERAL:         "bg-gray-100 text-gray-600",
 };
 
+function parseOrDefault<T>(val: string | undefined, fallback: T): T {
+  if (!val) return fallback;
+  try { return JSON.parse(val) as T; } catch { return fallback; }
+}
+
 export default async function AcademicsPage() {
-  const resources = await prisma.academicResource.findMany({
-    where:   { isPublished: true, category: { not: "ADMISSIONS" } },
-    orderBy: { createdAt: "desc" },
-  }).catch(() => []);
+  const [settings, resources] = await Promise.all([
+    prisma.siteSetting.findMany({ where: { key: { startsWith: "academics_" } } }).catch(() => []),
+    prisma.academicResource.findMany({
+      where:   { isPublished: true, category: { not: "ADMISSIONS" } },
+      orderBy: { createdAt: "desc" },
+    }).catch(() => []),
+  ]);
+
+  const s: Record<string, string> = {};
+  settings.forEach((r) => { s[r.key] = r.value; });
+
+  const stem       = parseOrDefault<Pathway>(s.academics_stem,       DEFAULT_STEM);
+  const humanities = parseOrDefault<Pathway>(s.academics_humanities, DEFAULT_HUMANITIES);
+  const arts       = parseOrDefault<Pathway>(s.academics_arts,       DEFAULT_ARTS);
+  const examStats  = parseOrDefault<ExamStat[]>(s.academics_exam_stats, DEFAULT_STATS);
 
   return (
     <>
@@ -58,11 +88,9 @@ export default async function AcademicsPage() {
                 <Microscope className="w-7 h-7 text-blue-600" />
               </div>
               <h2 className="text-3xl font-heading font-bold text-school-blue mb-4">STEM Pathway</h2>
-              <p className="text-gray-600 leading-relaxed mb-6">
-                Our Science, Technology, Engineering, and Mathematics pathway prepares students for careers in medicine, engineering, ICT, and research. Students benefit from fully equipped labs and coding workshops.
-              </p>
+              <p className="text-gray-600 leading-relaxed mb-6">{stem.desc}</p>
               <ul className="grid grid-cols-2 gap-2">
-                {subjects.stem.map((s) => (
+                {stem.subjects.map((s) => (
                   <li key={s} className="flex items-center gap-2 text-sm text-gray-700">
                     <span className="w-1.5 h-1.5 rounded-full bg-blue-400 shrink-0" /> {s}
                   </li>
@@ -88,11 +116,9 @@ export default async function AcademicsPage() {
                 <Globe className="w-7 h-7 text-green-600" />
               </div>
               <h2 className="text-3xl font-heading font-bold text-school-blue mb-4">Humanities Pathway</h2>
-              <p className="text-gray-600 leading-relaxed mb-6">
-                Developing critical thinkers, communicators, and global citizens. Students explore history, languages, social sciences, and geography, preparing for law, journalism, education, and public service.
-              </p>
+              <p className="text-gray-600 leading-relaxed mb-6">{humanities.desc}</p>
               <ul className="grid grid-cols-2 gap-2">
-                {subjects.humanities.map((s) => (
+                {humanities.subjects.map((s) => (
                   <li key={s} className="flex items-center gap-2 text-sm text-gray-700">
                     <span className="w-1.5 h-1.5 rounded-full bg-green-400 shrink-0" /> {s}
                   </li>
@@ -112,11 +138,9 @@ export default async function AcademicsPage() {
                 <Palette className="w-7 h-7 text-amber-600" />
               </div>
               <h2 className="text-3xl font-heading font-bold text-school-blue mb-4">Arts Pathway</h2>
-              <p className="text-gray-600 leading-relaxed mb-6">
-                Cultivating creativity, expression, and artistic excellence. Students in this pathway pursue visual arts, music, drama, and design, with pathways into fine arts, fashion, film, and creative industries.
-              </p>
+              <p className="text-gray-600 leading-relaxed mb-6">{arts.desc}</p>
               <ul className="grid grid-cols-2 gap-2">
-                {subjects.arts.map((s) => (
+                {arts.subjects.map((s) => (
                   <li key={s} className="flex items-center gap-2 text-sm text-gray-700">
                     <span className="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0" /> {s}
                   </li>
@@ -139,11 +163,7 @@ export default async function AcademicsPage() {
             Students sit KNEC examinations at the end of Form 4 (KCSE). Internal assessments, mid-term exams, and end-of-term exams track progress throughout the year.
           </p>
           <div className="grid sm:grid-cols-3 gap-6 max-w-3xl mx-auto text-left">
-            {[
-              { label: "KCSE Mean Grade", value: "B+ (68.4)", note: "2024 results" },
-              { label: "University Placement", value: "98%", note: "of Form 4 leavers" },
-              { label: "National Ranking", value: "Top 50", note: "Nationally recognised" },
-            ].map(({ label, value, note }) => (
+            {examStats.map(({ label, value, note }) => (
               <div key={label} className="bg-white rounded-xl p-5 shadow-sm border border-gray-100 text-center">
                 <p className="text-2xl font-bold text-school-blue">{value}</p>
                 <p className="text-sm font-medium text-gray-900 mt-1">{label}</p>
